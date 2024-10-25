@@ -1,29 +1,42 @@
-import { useState, useEffect } from 'react';
-import { Connection, PublicKey, LAMPORTS_PER_SOL, SystemProgram, Transaction, Keypair } from '@solana/web3.js';
-import { MnemonicDisplay } from '@/components/MnemonicDisplay';
-import { KeyPairDisplay } from '@/components/KeyPairDisplay';
-import { BalanceCheck } from '@/components/BalanceCheck';
-import { TransactionForm } from '@/components/TransactionForm';
-import { generateAndStoreMnemonic } from '@/utils/mnemonicUtil';
-import bs58 from 'bs58';
-import { Toaster } from "@/components/ui/toaster"
+import { useState, useEffect } from "react";
+import {
+  Connection,
+  PublicKey,
+  LAMPORTS_PER_SOL,
+  SystemProgram,
+  Transaction,
+  Keypair,
+} from "@solana/web3.js";
+import { MnemonicDisplay } from "@/components/MnemonicDisplay";
+import { KeyPairDisplay } from "@/components/KeyPairDisplay";
+import { BalanceCheck } from "@/components/BalanceCheck";
+import { TransactionForm } from "@/components/TransactionForm";
+import { generateAndStoreMnemonic, deriveSolanaKeyPair } from "@/utils/utils";
+import bs58 from "bs58";
+import { Toaster } from "@/components/ui/toaster";
+import HeroContainer from "./containers/HeroContainer";
+import { RecoilRoot } from "recoil";
+import { keyPairState } from "./store/atoms/atoms";
 
 function App() {
   const [mnemonic, setMnemonic] = useState("");
-  const [keyPair, setKeyPair] = useState(null);
+  const [keyPair, setKeyPair] = useState(keyPairState);
   const [balance, setBalance] = useState("NA");
   const [loading, setLoading] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [transactionStatus, setTransactionStatus] = useState("");
 
-  const connection = new Connection('https://solana-devnet.g.alchemy.com/v2/QFd20GTZ2_Tjc8AW0Obsknt8f2toU5Xi');
+  const connection = new Connection(
+    "https://solana-devnet.g.alchemy.com/v2/QFd20GTZ2_Tjc8AW0Obsknt8f2toU5Xi"
+  );
 
   useEffect(() => {
-    const { mnemonic, publicKey, privateKey } = generateAndStoreMnemonic();
-    setMnemonic(mnemonic);
+    const getMnemonic = generateAndStoreMnemonic();
+    setMnemonic(getMnemonic);
+    const { publicKey, privateKey } = deriveSolanaKeyPair(mnemonic);
     setKeyPair({ publicKey, privateKey });
-  }, []);
+  }, [mnemonic]);
 
   const checkBalance = async () => {
     if (keyPair) {
@@ -31,10 +44,10 @@ function App() {
       const publicKeyObj = new PublicKey(keyPair.publicKey);
       try {
         const balance = await connection.getBalance(publicKeyObj);
-        setBalance(balance / LAMPORTS_PER_SOL); // Convert lamports to SOL
+        setBalance(balance / LAMPORTS_PER_SOL);
       } catch (error) {
-        console.error('Error checking balance:', error);
-        setTransactionStatus('Failed to check balance.');
+        console.error("Error checking balance:", error);
+        setTransactionStatus("Failed to check balance.");
       } finally {
         setLoading(false);
       }
@@ -62,37 +75,54 @@ function App() {
         })
       );
 
-      const signature = await connection.sendTransaction(transaction, [senderKeypair]);
-      await connection.confirmTransaction(signature, 'processed');
+      const signature = await connection.sendTransaction(transaction, [
+        senderKeypair,
+      ]);
+      await connection.confirmTransaction(signature, "processed");
 
       setTransactionStatus(`Transaction successful! Signature: ${signature}`);
       checkBalance(); // Update balance after transaction
     } catch (error) {
-      console.error('Error sending transaction:', error);
-      setTransactionStatus('Transaction failed. Please try again.');
+      console.error("Error sending transaction:", error);
+      setTransactionStatus("Transaction failed. Please try again.");
     }
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <MnemonicDisplay mnemonic={mnemonic} />
-      <KeyPairDisplay publicKey={keyPair?.publicKey} privateKey={keyPair?.privateKey} />
-      <BalanceCheck balance={balance} checkBalance={checkBalance} loading={loading} />
-      <Toaster />
-      <TransactionForm
-        recipient={recipient}
-        amount={amount}
-        setRecipient={setRecipient}
-        setAmount={setAmount}
-        sendTransaction={sendTransaction}
-      />
-      {transactionStatus && (
-        <div className="mt-4 p-4 bg-gray-200 rounded-lg text-center">
-          {transactionStatus}
+    <RecoilRoot>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="container max-w-4xl mx-auto p-4 bg-white overflow-hidden rounded-lg shadow-lg">
+          <div className="p-4 sm:p-6 md:p-8">
+          {/* Heading */}
+          <h1 className="text-2xl sm:text-4xl font-mono font-bold mb-4 text-center">Web3 Wallet</h1>          
+          <HeroContainer keyPair={keyPair} mnemonic={mnemonic} />
+          <Toaster /> 
         </div>
-      )}
-    </div>
+      </div>
+      </div>
+    </RecoilRoot>
   );
 }
 
 export default App;
+
+// return (
+//   <div className="container mx-auto p-4">
+//     <MnemonicDisplay mnemonic={mnemonic} />
+//     <KeyPairDisplay publicKey={keyPair?.publicKey} privateKey={keyPair?.privateKey} />
+//     <BalanceCheck balance={balance} checkBalance={checkBalance} loading={loading} />
+//     <Toaster />
+//     <TransactionForm
+//       recipient={recipient}
+//       amount={amount}
+//       setRecipient={setRecipient}
+//       setAmount={setAmount}
+//       sendTransaction={sendTransaction}
+//     />
+//     {transactionStatus && (
+//       <div className="mt-4 p-4 bg-gray-200 rounded-lg text-center">
+//         {transactionStatus}
+//       </div>
+//     )}
+//   </div>
+// );

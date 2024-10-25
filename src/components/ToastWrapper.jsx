@@ -1,6 +1,6 @@
 import { useToast } from "@/components/ui/use-toast";
 
-export function ToastWrapper({ message, duration = 1000 }) {
+export function ToastWrapper(message, duration = 1000) {
   const { toast } = useToast();
 
   if (message) {
@@ -10,5 +10,5 @@ export function ToastWrapper({ message, duration = 1000 }) {
     });
   }
 
-  return null; // This component does not need to render anything
+  return null;
 }

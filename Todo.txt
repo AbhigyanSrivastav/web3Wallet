@@ -1,0 +1,10 @@
+in payment container correct sendPubKey formscehma
+create atoms for all common values
+create selectors for neccasry atoms
+modularize the already done code
+extract all common function into common file
+show balance in payment container
+support etherum too
+give option to either select wallet from adapter or use the in house one
+create token launchpad
+integrate dex
